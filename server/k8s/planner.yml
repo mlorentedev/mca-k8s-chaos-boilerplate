@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: planner
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: planner
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: planner
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: planner
+        image: mastercloudapps/planner:v1.23
+        command: ["/bin/bash", "-c"]
+        args:
+        - "./wait-for-it.sh weatherservice:9090 -t 500 -- ./wait-for-it.sh toposervice:8181 -t 500 -- ./wait-for-it.sh rabbitmqservice:5672 -t 500 -- java -jar planner.jar"
+        env:
+        # Environment variables for TopoService connection
+        - name: TOPO_HOST
+          value: toposervice
+        - name: TOPO_PORT
+          value: "8181"
+        # Environment variables for WeatherService connection
+        - name: GRPC_CLIENT_WEATHERSERVER_ADDRESS
+          value: static://weatherservice:9090
+        # Environment variables for RabbitMQ connection
+        - name: SPRING_CLOUD_STREAM_RABBIT_BINDER_NODES
+          value: rabbitmqservice:5672
+        - name: SPRING_RABBITMQ_HOST
+          value: rabbitmqservice
+        - name: SPRING_RABBITMQ_PORT
+          value: "5672"
+        - name: SPRING_RABBITMQ_USERNAME
+          value: root
+        - name: SPRING_RABBITMQ_PASSWORD
+          value: password

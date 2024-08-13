@@ -1,0 +1,53 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: toposervice
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: toposervice
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: toposervice
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: toposervice
+        image: mastercloudapps/toposervice:v1.23
+        env:
+        # Environment variables for MongoDB connection
+        - name: SPRING_DATA_MONGODB_HOST
+          value: mongodb
+        - name: SPRING_DATA_MONGODB_PORT
+          value: "27017"
+        - name: SPRING_DATA_MONGODB_DATABASE
+          value: topoDB
+        - name: SPRING_DATA_MONGODB_AUTHENTICATION-DATABASE
+          value: admin
+        - name: SPRING_DATA_MONGODB_USERNAME
+          value: root
+        - name: SPRING_DATA_MONGODB_PASSWORD
+          value: password
+        ports:
+        - containerPort: 8181
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: toposervice
+  labels:
+    app: toposervice
+spec:
+  ports:
+  - port: 8181
+    targetPort: 8181
+    protocol: TCP
+    name: toposervice-port
+  selector:
+    app: toposervice
+  type: ClusterIP
